@@ -24,6 +24,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.types.Row;
 
 /**
  * Skeleton for a Flink Streaming Job.
@@ -40,16 +41,19 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 public class StreamingJob {
 
 	public static void main(String[] args) throws Exception {
+		String mode = "hash";
 		// set up the streaming execution environment
 		Configuration configuration = new Configuration();
 		configuration.setString("host", "119.91.212.41");
 		configuration.setInteger("port", 6379);
 		configuration.setString("password", "Redis112358");
-		configuration.setInteger("max_tps", 8000);
+		configuration.setInteger("max_tps", 16000);
+		configuration.setString("mode", mode);
+		configuration.setInteger("expire", 10);
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(configuration);
-		DataStreamSource<String> dataStreamSource = env.addSource(new MySource(6000), "MySource");
+		DataStreamSource<Row> dataStreamSource = env.addSource(new MySource(20000, mode), "MySource");
 		SingleOutputStreamOperator
-				<String> stream = dataStreamSource.rebalance().filter((FilterFunction<String>) s -> s.length() > 0);
+				<Row> stream = dataStreamSource.rebalance().filter((FilterFunction<Row>) s -> s.getField(0).toString().length() > 0);
 		stream.addSink(new RedisSinkCustom(configuration));
 		env.execute("Flink Streaming Java API Skeleton");
 	}
