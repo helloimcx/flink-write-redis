@@ -19,12 +19,16 @@ public class Test {
     public static void main(String[] args) throws Exception {
         // final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(new Configuration());
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        DataStream<Row> dataStreamSource = env.addSource(new EventSource());
+        Configuration configuration = new Configuration();
+        configuration.setLong("maxEventNum", 10000*10000);
+        DataStream<Row> dataStreamSource = env.addSource(new EventSource(configuration));
         dataStreamSource.addSink(new SinkFunction<Row>() {
             @Override
             public void invoke(Row value, Context context) throws Exception {
                 SinkFunction.super.invoke(value, context);
-                // LOG.info(value.toString());
+                if (System.currentTimeMillis() % 10000 < 10) {
+                    LOG.info(value.toString());
+                }
             }
         });
         env.execute("Test");

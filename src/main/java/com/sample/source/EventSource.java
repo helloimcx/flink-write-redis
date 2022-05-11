@@ -5,13 +5,16 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.Counter;
+import org.apache.flink.runtime.state.FunctionInitializationContext;
+import org.apache.flink.runtime.state.FunctionSnapshotContext;
+import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.types.Row;
 
 import java.util.LinkedList;
 import java.util.Queue;
 
-public class EventSource extends RichParallelSourceFunction<Row> {
+public class EventSource extends RichParallelSourceFunction<Row> implements CheckpointedFunction {
 
     /** Flag to make the source cancelable. */
     private volatile boolean isRunning = true;
@@ -20,20 +23,27 @@ public class EventSource extends RichParallelSourceFunction<Row> {
     private long numElementsEmitted = 0;
     private transient Counter counter;
 
-    final long maxEventNum = 10000 * 1000;
+    long maxEventNum;
     Queue<Event> popQueue = new LinkedList<>();
+
+    public EventSource(Configuration configuration) {
+        maxEventNum = configuration.getLong("maxEventNum", 10);
+    }
 
     @Override
     public void open(Configuration parameters) throws Exception {
         this.counter = getRuntimeContext()
                 .getMetricGroup()
                 .counter("numElementsEmitted");
+        int parallelism = this.getRuntimeContext().getNumberOfParallelSubtasks();
+        maxEventNum /= parallelism;
     }
 
     @Override
     public void run(SourceContext<Row> sourceContext) throws Exception {
+        final Object lock = sourceContext.getCheckpointLock();
         Event event;
-        while (isRunning) {
+        while (isRunning && numElementsEmitted < maxEventNum) {
             int label = 0;
             if (System.currentTimeMillis() % 100000 < 10) {
                 label = 1;
@@ -46,14 +56,26 @@ public class EventSource extends RichParallelSourceFunction<Row> {
             } else {
                 event = new Event(1, popQueue.poll());
             }
-            sourceContext.collect(Row.of(event.toString()));
-            ++numElementsEmitted;
-            this.counter.inc();
+            synchronized (lock) {
+                sourceContext.collect(Row.of(event.toString()));
+                ++numElementsEmitted;
+                this.counter.inc();
+            }
         }
     }
 
     @Override
     public void cancel() {
         isRunning = false;
+    }
+
+    @Override
+    public void snapshotState(FunctionSnapshotContext context) throws Exception {
+
+    }
+
+    @Override
+    public void initializeState(FunctionInitializationContext context) throws Exception {
+
     }
 }

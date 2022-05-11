@@ -40,7 +40,7 @@ public class Event {
 
     @Override
     public String toString() {
-        return items + "#" + user + "#" + timestamp + "#" + label + "#" + type;
+        return items + "|" + user + "|" + timestamp + "|" + label + "|" + type;
     }
 
     public Row toRow() {
