@@ -17,7 +17,6 @@ import java.util.ArrayList;
 public class Test {
     private static final Logger LOG = LoggerFactory.getLogger(Test.class);
     public static void main(String[] args) throws Exception {
-        // final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(new Configuration());
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         Configuration configuration = new Configuration();
         configuration.setLong("maxEventNum", 10000*10000);
