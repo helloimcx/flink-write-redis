@@ -57,7 +57,12 @@ public class EventSource extends RichParallelSourceFunction<Row> implements Chec
                 event = new Event(1, popQueue.poll());
             }
             synchronized (lock) {
-                sourceContext.collect(Row.of(event.toString()));
+                String[] arr = event.toString().split("\\|");
+                Row row = new Row(arr.length);
+                for (int i = 0; i < arr.length; ++i) {
+                    row.setField(i, arr[i]);
+                }
+                sourceContext.collect(row);
                 ++numElementsEmitted;
                 this.counter.inc();
             }

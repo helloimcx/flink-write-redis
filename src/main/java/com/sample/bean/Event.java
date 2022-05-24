@@ -40,7 +40,11 @@ public class Event {
 
     @Override
     public String toString() {
-        return items + "|" + user + "|" + timestamp + "|" + label + "|" + type;
+        StringBuilder itemsStrBuilder = new StringBuilder();
+        for (Item item : items) {
+            itemsStrBuilder.append(item).append(";");
+        }
+        return itemsStrBuilder + "|" + user + "|" + timestamp + "|" + label + "|" + type;
     }
 
     public Row toRow() {
