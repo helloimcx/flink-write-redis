@@ -12,7 +12,7 @@ public class User {
     int device;
 
     public User() {
-        id = getRandInt(1, 100 * 10000);
+        id = getRandInt(1, 10000);
         age = id % 100 + 1;
         gender = id % 2;
         city = id % 49 + 1;

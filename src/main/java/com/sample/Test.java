@@ -14,7 +14,7 @@ public class Test {
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         // env.disableOperatorChaining(); // 关闭算子链
-        env.setParallelism(64);
+        env.setParallelism(8);
         Configuration configuration = new Configuration();
         configuration.setLong("maxEventNum", 10000*10000);
         DataStream<Row> dataStreamSource = env.addSource(new EventSource(configuration)).name("Kafka");
@@ -26,7 +26,7 @@ public class Test {
                     LOG.info(value.toString());
                 }
             }
-        });
+        }).name("RedisSink").setParallelism(4);
         env.execute("GoThrough");
     }
 }

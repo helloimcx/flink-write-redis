@@ -5,14 +5,12 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.JoinFunction;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.runtime.operators.util.AssignerWithPeriodicWatermarksAdapter;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
@@ -29,7 +27,7 @@ public class PopAndBuyJoin {
         env.setParallelism(64);
 
         WatermarkStrategy<Row> watermarkStrategy = WatermarkStrategy
-                .<Row>forBoundedOutOfOrderness(Duration.ofSeconds(30))
+                .<Row>forBoundedOutOfOrderness(Duration.ofSeconds(1))
                 .withTimestampAssigner((event, timestamp) -> Long.parseLong(event.getFieldAs(2)));
 
         Configuration configuration = new Configuration();
@@ -59,9 +57,9 @@ public class PopAndBuyJoin {
         DataStream<Row> buyStream = outputStream.getSideOutput(outputTag2);
 
         DataStream<Row> res =  popStream.join(buyStream)
-                .where(row -> row.getField(3))
-                .equalTo(row -> row.getField(3))
-                .window(TumblingEventTimeWindows.of(Time.seconds(30)))
+                .where(row -> row.getField(1))
+                .equalTo(row -> row.getField(1))
+                .window(TumblingEventTimeWindows.of(Time.seconds(1)))
                 .apply(new JoinFunction<Row, Row, Row>() {
                     @Override
                     public Row join(Row first, Row second) throws Exception {
@@ -77,9 +75,7 @@ public class PopAndBuyJoin {
             @Override
             public void invoke(Row value, Context context) throws Exception {
                 SinkFunction.super.invoke(value, context);
-                if (System.currentTimeMillis() % 10000 < 10) {
-                    LOG.info(value.toString());
-                }
+                LOG.info("GET BUY LOG:" + value.toString());
             }
         });
         env.execute("GoThrough");

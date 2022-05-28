@@ -21,7 +21,7 @@ public class EventSource extends RichParallelSourceFunction<Row> implements Chec
 
     /** The number of elements emitted already. */
     private long numElementsEmitted = 0;
-    private transient Counter counter;
+    // private transient Counter counter;
 
     long maxEventNum;
     Queue<Event> popQueue = new LinkedList<>();
@@ -32,9 +32,9 @@ public class EventSource extends RichParallelSourceFunction<Row> implements Chec
 
     @Override
     public void open(Configuration parameters) throws Exception {
-        this.counter = getRuntimeContext()
-                .getMetricGroup()
-                .counter("numElementsEmitted");
+//        this.counter = getRuntimeContext()
+//                .getMetricGroup()
+//                .counter("numElementsEmitted");
         int parallelism = this.getRuntimeContext().getNumberOfParallelSubtasks();
         maxEventNum /= parallelism;
     }
@@ -64,8 +64,9 @@ public class EventSource extends RichParallelSourceFunction<Row> implements Chec
                 }
                 sourceContext.collect(row);
                 ++numElementsEmitted;
-                this.counter.inc();
+                // this.counter.inc();
             }
+            Thread.sleep(1);
         }
     }
 
